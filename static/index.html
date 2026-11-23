@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA Clipper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2EDFA; --panel:#FFFFFF; --ink:#1B1430; --soft:#5E5578; --line:#DDD3EE;
+  --dusk:#D6336C; --dusk-ink:#FFFFFF; --cap:#FFDE00; --ok:#1C7C54; --bad:#B4232F;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#17122B; --panel:#221A3D; --ink:#F5EEFF; --soft:#B3A7CF; --line:#3A2F5E;
+  --dusk:#FF5E8A; --dusk-ink:#1B1430; --cap:#FFDE00; --ok:#5BD6A0; --bad:#FF7A85;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Archivo,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--cap);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 20px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.brand{font-weight:900;font-stretch:125%;font-size:22px;letter-spacing:-.01em}
+.brand small{display:block;font-weight:500;font-stretch:100%;font-size:13px;color:var(--soft);letter-spacing:0}
+.ghost{background:none;border:1.5px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+.ghost:hover{border-color:var(--soft)}
+
+/* The link box looks like the hook card on the clips */
+.hero{display:grid;gap:14px;margin-bottom:34px}
+.hero h1{font-size:clamp(30px,5vw,54px);line-height:1.02;font-weight:900;font-stretch:118%;margin:0;max-width:16ch;letter-spacing:-.02em}
+.hookcard{display:flex;gap:10px;align-items:center;background:#fff;color:#0C0C0C;border-radius:26px;padding:10px 10px 10px 24px;
+  box-shadow:8px 10px 0 rgba(0,0,0,.28);max-width:900px}
+.hookcard input{flex:1;min-width:0;border:0;background:transparent;color:#0C0C0C;font-weight:800;font-size:20px;padding:12px 0}
+.hookcard input::placeholder{color:#8a8a8a;font-weight:600}
+.hookcard input:focus{outline:none}
+.hookcard:focus-within{box-shadow:8px 10px 0 var(--dusk)}
+.hookcard select{border:0;background:#F1F1F1;color:#0C0C0C;border-radius:14px;padding:12px;font-weight:700}
+.go{background:var(--dusk);color:var(--dusk-ink);border:0;border-radius:18px;padding:14px 22px;font-weight:800;cursor:pointer;white-space:nowrap}
+.go:disabled{opacity:.5;cursor:default}
+.hint{color:var(--soft);font-size:14px;max-width:70ch;margin:0}
+.err{color:var(--bad);font-weight:600}
+
+.grid{display:grid;grid-template-columns:280px 1fr;gap:28px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+aside h2,main h2{font-size:15px;font-weight:800;margin:0 0 10px}
+.stream{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;text-align:left;width:100%}
+.stream[aria-current="true"]{border-color:var(--dusk)}
+.stream b{display:block;font-size:14px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.stream span{font-size:13px;color:var(--soft)}
+.empty{color:var(--soft);font-size:14px}
+
+/* Progress line reads like an on-screen caption */
+.progress{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:22px}
+.now{font-weight:900;font-size:19px;line-height:1.25;display:flex;gap:10px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--soft);flex:none}
+.busy .dot{background:var(--cap);box-shadow:0 0 0 4px rgba(255,222,0,.25);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(255,222,0,0)}}
+@media (prefers-reduced-motion:reduce){.busy .dot{animation:none}}
+details.log{margin-top:8px;font-size:13px;color:var(--soft)}
+details.log pre{white-space:pre-wrap;max-height:240px;overflow:auto;margin:8px 0 0;font:12px/1.5 ui-monospace,Consolas,monospace}
+
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.head h2{font-size:24px;font-weight:900;font-stretch:110%;margin:0}
+.head a{color:var(--soft);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.clip{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.clip video{width:100%;aspect-ratio:9/16;background:#000;display:block}
+.clip .body{padding:12px 14px 14px;display:grid;gap:6px}
+.num{font-size:12px;font-weight:800;color:var(--soft)}
+.clip h3{margin:0;font-size:15px;line-height:1.3}
+.cap{font-size:14px;color:var(--soft);margin:0}
+.tags{font-size:13px;color:var(--dusk);font-weight:600}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.small{font-size:13px;padding:6px 10px;border-radius:9px}
+.edit{display:grid;gap:8px;margin-top:6px}
+.edit label{font-size:12px;font-weight:700;color:var(--soft);display:grid;gap:3px}
+.edit input,.edit textarea{background:transparent;border:1.5px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Dialogs */
+dialog{border:0;border-radius:18px;padding:0;background:var(--panel);color:var(--ink);max-width:min(980px,94vw);width:100%}
+dialog::backdrop{background:rgba(10,6,24,.6)}
+.dlg{padding:22px}
+.dlg h2{margin:0 0 6px;font-size:22px;font-weight:900}
+.dlg p{margin:0 0 14px;color:var(--soft);font-size:14px}
+.tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.tab{border:2px solid var(--line);background:none;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer}
+.tab[aria-pressed="true"].face{border-color:#FFDE00}
+.tab[aria-pressed="true"].game{border-color:#3FC1FF}
+.stage{position:relative;user-select:none;touch-action:none;line-height:0}
+.stage img{width:100%;border-radius:10px}
+.box{position:absolute;border:3px solid;pointer-events:none}
+.box.face{border-color:#FFDE00;background:rgba(255,222,0,.12)}
+.box.game{border-color:#3FC1FF;background:rgba(63,193,255,.12)}
+.box i{position:absolute;top:-24px;left:-3px;font:700 12px/1 Archivo,sans-serif;font-style:normal;padding:4px 6px;border-radius:5px;color:#000}
+.box.face i{background:#FFDE00}.box.game i{background:#3FC1FF}
+.foot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.field{display:grid;gap:4px;margin-bottom:12px;font-size:14px;font-weight:700}
+.field input{border:1.5px solid var(--line);border-radius:10px;padding:10px;background:transparent;font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">GTA Clipper<small>Stream in, shorts out. Runs on your PC.</small></div>
+    <div class="actions">
+      <button class="ghost" id="openFolder">Open clips folder</button>
+      <button class="ghost" id="openSettings">Settings</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Paste a stream. Get the moments people rewatch.</h1>
+    <form class="hookcard" id="form">
+      <input id="target" autocomplete="off" placeholder="YouTube, Twitch or Kick link, or a video file path" aria-label="Stream link or video file path">
+      <select id="count" aria-label="How many clips">
+        <option value="5">5 clips</option><option value="10" selected>10 clips</option><option value="20">20 clips</option>
+      </select>
+      <button class="go" id="go" type="submit">Find clips</button>
+    </form>
+    <p class="hint" id="modeHint">Finished streams (VODs) only. The app downloads just a minute around each moment, not the whole stream.</p>
+    <p class="hint err" id="formErr" hidden></p>
+  </section>
+
+  <div class="grid">
+    <aside>
+      <h2>Your streams</h2>
+      <div id="streams"><p class="empty">Nothing yet. Paste your first stream link above.</p></div>
+    </aside>
+    <main>
+      <div class="progress" id="progress">
+        <div class="now"><span class="dot"></span><span id="step">Ready when you are.</span></div>
+        <details class="log"><summary>Show details</summary><pre id="log"></pre></details>
+      </div>
+      <div id="current"></div>
+    </main>
+  </div>
+</div>
+
+<dialog id="layoutDlg"><div class="dlg">
+  <h2>Mark the facecam and the gameplay</h2>
+  <p>Drag a box on the picture. Do this once per streamer, the app remembers it.</p>
+  <div class="tabs">
+    <button class="tab face" data-kind="face" aria-pressed="true">Facecam (top of clip)</button>
+    <button class="tab game" data-kind="game" aria-pressed="false">Gameplay (bottom of clip)</button>
+    <label style="font-size:14px;margin-left:auto"><input type="checkbox" id="noFace"> No facecam on this stream</label>
+  </div>
+  <div class="stage" id="stage"><img id="frameImg" alt="A frame from the stream"></div>
+  <div class="foot"><button class="go" id="saveLayout">Save and keep going</button></div>
+</div></dialog>
+
+<dialog id="settingsDlg"><div class="dlg">
+  <h2>Settings</h2>
+  <p>A Claude API key is optional. With it, Claude watches each moment, drops game dialogue from captions and writes the hook and title. Without it, the app picks moments by loudness, chat and replays, and you can edit hooks yourself.</p>
+  <label class="field">Claude API key<input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off"></label>
+  <label class="field">Model<input id="model" placeholder="claude-sonnet-5-5"></label>
+  <p id="setMsg"></p>
+  <div class="foot">
+    <button class="ghost" id="removeKey">Remove key</button>
+    <button class="ghost" id="closeSettings">Close</button>
+    <button class="go" id="saveSettings">Save</button>
+  </div>
+</div></dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+let S = null, current = localStorage.getItem("current") || null, openEdit = null, layoutShownFor = null;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const api = async (url, body) => {
+  const r = await fetch(url, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "Something went wrong");
+  return j;
+};
+
+$("#form").onsubmit = async e => {
+  e.preventDefault();
+  $("#formErr").hidden = true;
+  try { await api("/api/clip", {target: $("#target").value, count: +$("#count").value}); $("#target").value = ""; refresh(); }
+  catch (x) { $("#formErr").textContent = x.message; $("#formErr").hidden = false; }
+};
+$("#openFolder").onclick = () => api("/api/open-folder", {});
+
+async function refresh() {
+  try { S = await api("/api/state"); } catch { $("#step").textContent = "Can't reach the app. Is the black window still open?"; return; }
+  const p = S.progress;
+  if (!current && S.streams[0]) current = S.streams[0].id;
+  if (p.busy && p.stream && p.stream !== current && !openEdit) current = p.stream;
+  $("#progress").classList.toggle("busy", !!p.busy);
+  $("#step").textContent = p.busy ? p.step : (p.error ? "Stopped: " + p.error : (p.step || "Ready when you are."));
+  const lg = $("#log"), atEnd = lg.scrollTop + lg.clientHeight >= lg.scrollHeight - 5;
+  lg.textContent = (p.log || []).join("\n"); if (atEnd) lg.scrollTop = lg.scrollHeight;
+  $("#modeHint").textContent = (S.ai ? "Claude is on: it checks each moment and writes hooks and titles. " : "Automatic mode (no API key). ")
+    + "Finished streams (VODs) only. The app downloads just a minute around each moment, not the whole stream."
+    + (S.tools.ffmpeg ? "" : " ffmpeg is missing, so clips can't be made yet. See the README.");
+  renderStreams(); if (!openEdit) renderCurrent(); checkLayout();
+}
+
+function renderStreams() {
+  const box = $("#streams");
+  if (!S.streams.length) return;
+  box.innerHTML = S.streams.map(s => `<button class="stream" data-id="${esc(s.id)}" aria-current="${s.id===current}">
+    <b>${esc(s.title)}</b><span>${esc(s.channel)}, ${s.clips.length} clip${s.clips.length==1?"":"s"}, ${s.used_up ? "used up" : s.left + " moments left"}</span></button>`).join("");
+  box.querySelectorAll(".stream").forEach(b => b.onclick = () => { current = b.dataset.id; localStorage.setItem("current", current); openEdit = null; renderStreams(); renderCurrent(true); });
+}
+
+let lastSig = "";
+function renderCurrent(force) {
+  const s = S.streams.find(x => x.id === current), el = $("#current");
+  if (!s) { el.innerHTML = ""; lastSig = ""; return; }
+  // Only redraw when something changed, so playing videos don't restart
+  const sig = JSON.stringify([s.id, s.used_up, S.progress.busy && S.progress.stream === s.id, openEdit, s.clips.map(c => [c.n, c.rendered, c.title, c.caption, c.hook, c.hashtags])]);
+  if (sig === lastSig && !force) return; lastSig = sig;
+  const busyHere = S.progress.busy && S.progress.stream === s.id;
+  el.innerHTML = `<div class="head"><div><h2>${esc(s.channel)}</h2>
+      ${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : `<span class="cap">${esc(s.url)}</span>`}</div>
+    <div class="actions">
+      ${s.used_up ? `<span class="cap">This stream is used up. Try the streamer's next stream.</span>` :
+        `<button class="go" id="more" ${busyHere?"disabled":""}>${s.clips.length ? "Make 10 more" : "Make 10 clips"}</button>`}
+      <button class="ghost small" id="relayout">Redo facecam box</button>
+    </div></div>
+    ${s.clips.length ? "" : `<p class="empty">${busyHere ? "Working on the first clips. The first run also downloads the speech model (about 650 MB), so give it a few minutes." : "No clips yet."}</p>`}
+    <div class="clips">${[...s.clips].reverse().map(c => clipCard(s, c)).join("")}</div>`;
+  const more = $("#more"); if (more) more.onclick = async () => { await api("/api/clip", {target: s.id, count: 10}); refresh(); };
+  $("#relayout").onclick = async () => { if (confirm(`Forget the saved facecam box for ${s.channel}? You'll be asked again on the next batch.`)) await api("/api/forget-layout", {channel: s.channel}); };
+  el.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
+    b.textContent = "Saving...";
+    try { await api(`/api/save/${encodeURIComponent(s.id)}/${b.dataset.save}`, {}); b.textContent = "Saved to Downloads"; }
+    catch (x) { b.textContent = "Couldn't save"; }
+    setTimeout(() => b.textContent = "Save to Downloads", 2500);
+  });
+  el.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+    const c = s.clips.find(x => x.n == b.dataset.copy);
+    copyText(`${c.title}\n\n${c.caption}\n\n${c.hashtags.join(" ")}`); b.textContent = "Copied";
+    setTimeout(() => b.textContent = "Copy text", 1500);
+  });
+  el.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { openEdit = openEdit == b.dataset.edit ? null : b.dataset.edit; renderCurrent(); });
+  el.querySelectorAll("form.edit").forEach(f => f.onsubmit = async e => {
+    e.preventDefault(); const d = Object.fromEntries(new FormData(f));
+    openEdit = null; await api("/api/rerender", {sid: s.id, n: +f.dataset.n, changes: d}); refresh();
+  });
+}
+
+function copyText(t) {  // works in the app window too, where the clipboard API can be blocked
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(() => oldCopy(t));
+  oldCopy(t);
+}
+function oldCopy(t) {
+  const a = document.createElement("textarea"); a.value = t; a.style.position = "fixed"; a.style.opacity = "0";
+  document.body.appendChild(a); a.select(); document.execCommand("copy"); a.remove();
+}
+
+function clipCard(s, c) {
+  const v = Math.round(c.rendered || 0), base = `/media/${encodeURIComponent(s.id)}/${c.n}`;
+  const editing = openEdit == c.n;
+  return `<article class="clip">
+    <video controls preload="none" playsinline poster="${base}/thumb?v=${v}" src="${base}/file?v=${v}"></video>
+    <div class="body">
+      <span class="num">Clip ${c.n}, from ${esc(c.source_time)}</span>
+      <h3>${esc(c.title)}</h3>
+      <p class="cap">${esc(c.caption)}</p>
+      <span class="tags">${esc(c.hashtags.join(" "))}</span>
+      <div class="row">
+        <button class="ghost small" data-save="${c.n}">Save to Downloads</button>
+        <button class="ghost small" data-copy="${c.n}">Copy text</button>
+        <button class="ghost small" data-edit="${c.n}">${editing ? "Close" : "Edit"}</button>
+      </div>
+      ${editing ? `<form class="edit" data-n="${c.n}">
+        <label>Hook (first 3 seconds, 9 words max)<input name="hook" value="${esc(c.hook)}"></label>
+        <label>Title<input name="title" maxlength="60" value="${esc(c.title)}"></label>
+        <label>Caption<textarea name="caption" rows="2">${esc(c.caption)}</textarea></label>
+        <label>Hashtags<input name="hashtags" value="${esc(c.hashtags.join(" "))}"></label>
+        <div class="two"><label>Start (s)<input name="start" type="number" step="0.1" value="${c.start}"></label>
+        <label>End (s)<input name="end" type="number" step="0.1" value="${c.end}"></label></div>
+        <button class="go small" type="submit">Save and re-render</button></form>` : ""}
+    </div></article>`;
+}
+
+/* ---------- facecam / gameplay box editor ---------- */
+const ASPECT = {face: 1080/740, game: 1080/1180, gameFull: 1080/1920};
+let boxes = {face:null, game:null}, kind = "face", frameWH = [1920,1080], layoutSid = null;
+function checkLayout() {
+  const s = S.streams.find(x => x.needs_layout);
+  const dlg = $("#layoutDlg");
+  if (!s) { if (dlg.open) dlg.close(); layoutShownFor = null; return; }
+  if (layoutShownFor === s.id) return;
+  layoutShownFor = layoutSid = s.id; frameWH = s.needs_layout.frame_wh;
+  const sug = s.needs_layout.suggest || {};
+  boxes = {face: sug.face || null, game: sug.game || null};
+  $("#noFace").checked = false;
+  $("#frameImg").src = `/api/frame/${encodeURIComponent(s.id)}?t=${Date.now()}`;
+  setKind(boxes.face ? "game" : "face"); drawBoxes(); dlg.showModal();
+}
+function setKind(k) { kind = k; document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-pressed", t.dataset.kind === k)); }
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => setKind(t.dataset.kind));
+$("#noFace").onchange = () => { if ($("#noFace").checked) { boxes.face = null; setKind("game"); } drawBoxes(); };
+function drawBoxes() {
+  const st = $("#stage"); st.querySelectorAll(".box").forEach(b => b.remove());
+  const img = $("#frameImg"), sc = img.clientWidth / frameWH[0];
+  for (const k of ["face","game"]) {
+    const b = boxes[k]; if (!b) continue;
+    const d = document.createElement("div"); d.className = "box " + k;
+    Object.assign(d.style, {left: b[0]*sc+"px", top: b[1]*sc+"px", width: b[2]*sc+"px", height: b[3]*sc+"px"});
+    d.innerHTML = `<i>${k === "face" ? "Facecam" : "Gameplay"}</i>`; st.appendChild(d);
+  }
+}
+$("#frameImg").onload = drawBoxes; window.addEventListener("resize", drawBoxes);
+(() => {
+  const st = $("#stage"); let start = null;
+  const pt = e => { const r = $("#frameImg").getBoundingClientRect(), sc = frameWH[0] / r.width;
+    return [Math.max(0, Math.min(frameWH[0], (e.clientX - r.left) * sc)), Math.max(0, Math.min(frameWH[1], (e.clientY - r.top) * sc))]; };
+  st.onpointerdown = e => { if (kind === "face" && $("#noFace").checked) return; start = pt(e); st.setPointerCapture(e.pointerId); };
+  st.onpointermove = e => {
+    if (!start) return; const p = pt(e);
+    const asp = kind === "face" ? ASPECT.face : ($("#noFace").checked ? ASPECT.gameFull : ASPECT.game);
+    let w = Math.abs(p[0] - start[0]), h = w / asp;
+    if (Math.abs(p[1] - start[1]) > h) { h = Math.abs(p[1] - start[1]); w = h * asp; }
+    let x = p[0] < start[0] ? start[0] - w : start[0], y = p[1] < start[1] ? start[1] - h : start[1];
+    if (x + w > frameWH[0]) { w = frameWH[0] - x; h = w / asp; } if (y + h > frameWH[1]) { h = frameWH[1] - y; w = h * asp; }
+    x = Math.max(0, x); y = Math.max(0, y);
+    boxes[kind] = [x, y, w, h].map(v => Math.round(v / 2) * 2); drawBoxes();
+  };
+  st.onpointerup = () => { start = null; };
+})();
+$("#saveLayout").onclick = async () => {
+  if (!boxes.game) return alert("Drag a box over the gameplay first.");
+  if (!$("#noFace").checked && !boxes.face) return alert("Drag a box over the facecam, or tick 'No facecam'.");
+  await api("/api/layout", {sid: layoutSid, face: $("#noFace").checked ? null : boxes.face, game: boxes.game});
+  $("#layoutDlg").close(); refresh();
+};
+
+/* ---------- settings ---------- */
+$("#openSettings").onclick = async () => {
+  const s = await api("/api/settings"); $("#apiKey").value = ""; $("#apiKey").placeholder = s.has_key ? "Key saved (type a new one to replace it)" : "sk-ant-...";
+  $("#model").value = s.model; $("#setMsg").textContent = ""; $("#settingsDlg").showModal();
+};
+$("#closeSettings").onclick = () => $("#settingsDlg").close();
+$("#saveSettings").onclick = async () => {
+  $("#setMsg").textContent = "Checking the key...";
+  try { await api("/api/settings", {api_key: $("#apiKey").value || "keep", model: $("#model").value}); $("#settingsDlg").close(); refresh(); }
+  catch (x) { $("#setMsg").textContent = x.message; }
+};
+$("#removeKey").onclick = async () => { await api("/api/settings", {api_key: "", model: $("#model").value}); $("#settingsDlg").close(); refresh(); };
+
+refresh(); setInterval(refresh, 2000);
+</script>
+</body>
+</html>
