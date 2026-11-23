@@ -1,0 +1,7 @@
+flask>=3.0
+yt-dlp
+sherpa-onnx
+numpy
+pillow
+requests
+pywebview

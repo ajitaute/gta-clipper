@@ -1,0 +1,8 @@
+# Created when the app runs
+workspace/
+models/
+fonts/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store

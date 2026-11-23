@@ -1,0 +1,2 @@
+# Moments where the streamer says any of these words are skipped.
+# One word per line. Add slurs or anything you never want in a clip.
